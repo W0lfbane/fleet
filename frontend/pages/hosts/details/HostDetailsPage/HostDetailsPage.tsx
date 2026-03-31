@@ -1048,6 +1048,16 @@ const HostDetailsPage = ({
   }
   const failingPoliciesCount = host?.issues.failing_policies_count || 0;
 
+  const isMacOSHost = isMacOS(host.platform);
+  const isIosOrIpadosHost = isIPadOrIPhone(host.platform);
+  const isAndroidHost = isAndroid(host.platform);
+  const isWindowsHost = isWindows(host.platform);
+  const isAppleDeviceHost = isAppleDevice(host.platform);
+  const isChromeOsHost = host?.platform === "chrome";
+
+  const showReportsTab =
+    !isIosOrIpadosHost && !isAndroidHost && !isChromeOsHost;
+
   const hostDetailsSubNav: IHostDetailsSubNavItem[] = [
     {
       name: "Details",
@@ -1059,11 +1069,16 @@ const HostDetailsPage = ({
       title: "software",
       pathname: PATHS.HOST_SOFTWARE(hostIdFromURL),
     },
-    {
-      name: "Reports",
-      title: "reports",
-      pathname: PATHS.HOST_REPORTS(hostIdFromURL),
-    },
+    // Only include Reports for supported platforms
+    ...(showReportsTab
+      ? [
+          {
+            name: "Reports",
+            title: "reports",
+            pathname: PATHS.HOST_REPORTS(hostIdFromURL),
+          },
+        ]
+      : []),
     {
       name: "Policies",
       title: "policies",
@@ -1134,12 +1149,6 @@ const HostDetailsPage = ({
     name: host?.mdm.setup_experience?.bootstrap_package_name,
   };
 
-  const isMacOSHost = isMacOS(host.platform);
-  const isIosOrIpadosHost = isIPadOrIPhone(host.platform);
-  const isAndroidHost = isAndroid(host.platform);
-  const isWindowsHost = isWindows(host.platform);
-  const isAppleDeviceHost = isAppleDevice(host.platform);
-
   const canResendProfiles =
     (isAppleDeviceHost || isWindowsHost || isAndroidHost) &&
     (isGlobalAdmin ||
@@ -1150,7 +1159,7 @@ const HostDetailsPage = ({
       isHostTeamTechnician);
 
   const showSoftwareLibraryTab = isPremiumTier;
-  const showReportsTab = mdm?.enrollment_status !== "Pending";
+  const showReportsCard = mdm?.enrollment_status !== "Pending";
   const showActivityCard = !isAndroidHost;
   const showAgentOptionsCard = !isIosOrIpadosHost && !isAndroidHost;
   const showLocalUserAccountsCard = !isIosOrIpadosHost && !isAndroidHost;
@@ -1485,20 +1494,20 @@ const HostDetailsPage = ({
                   </Tabs>
                 </TabNav>
               </TabPanel>
-
-              <TabPanel>
-                <HostReportsTab
-                  hostId={host.id}
-                  hostName={host.display_name}
-                  router={router}
-                  location={location}
-                  saveReportsDisabledInConfig={
-                    config?.server_settings?.query_reports_disabled
-                  }
-                  showReportsTab={showReportsTab}
-                />
-              </TabPanel>
-
+              {showReportsTab && (
+                <TabPanel>
+                  <HostReportsTab
+                    hostId={host.id}
+                    hostName={host.display_name}
+                    router={router}
+                    location={location}
+                    saveReportsDisabledInConfig={
+                      config?.server_settings?.query_reports_disabled
+                    }
+                    showReportsCard={showReportsCard}
+                  />
+                </TabPanel>
+              )}
               <TabPanel>
                 <PoliciesCard
                   policies={host?.policies || []}
